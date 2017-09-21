@@ -4,8 +4,8 @@
 
 int value = 0;
 
-extern void hello(void);
-extern void world(void);
+extern void *hello(void);
+extern void *world(void);
 
 void main(int argc, char *argv[]){
 	pthread_t tid;
@@ -17,14 +17,14 @@ void main(int argc, char *argv[]){
 	pthread_create(&tid, &attr, world, NULL);
 	pthread_create(&tid2, &attr, hello, NULL);
 	pthread_join(tid, NULL);
-	
+
 	printf("\n");
 }
 
-void world(void) {
+void *world(void) {
 	printf("world");
 }
 
-void hello(void) {
+void *hello(void) {
 	printf("Hello ");
 }
