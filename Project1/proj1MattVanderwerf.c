@@ -8,7 +8,7 @@
 
 char **tokenize(char *line, int *is_background);
 void execute(char *raw_in, int *should_run);
-void update_command_history(char tokens_history[][MAX_LINE], char last_command[]);
+void update_command_history(char tokens_history[][MAX_LINE], char last_command[], int history_count);
 
 int main(void) {
 	char *args[MAX_LINE/2 + 1]; /* command line arguments */
@@ -35,25 +35,56 @@ int main(void) {
 		//debug input
 		//printf("%s", raw_input);
 		
-		if(strncmp(raw_input, "exit", 4) == 0) {
+
+		// CHECK IF TA POSTED ABOUT THIS
+		if(strncmp(raw_input, "exit", 4) == 0) {// is it true this needs to be a child process?
 			should_run = 0;
 			exit(0);
 		} else if(strncmp(raw_input, "history", 7) == 0) {
-			// print options
-			for(int i=0; i<history_count; i++) {// print command history
-
-			}
-			// scan in int
-			//
-			// error check
-			//
-			// run command
-		} else {
-			execute(raw_input, &should_run);
-			update_command_history(tokens_history, raw_input);
+			update_command_history(tokens_history, "history", history_count);
 			if(history_count < 10) {
 				history_count++;
 			}
+			// print options
+			for(int i = history_count-1; i>=0; i--) {// print command history
+				printf("%d: %s\n", i, tokens_history[i]);
+			}
+			// scan in input
+			char history_input[MAX_LINE];
+			fgets(history_input, input_buffer_size, stdin);
+			// error check
+			if(strlen(history_input) > 3) {
+				printf("Invalid History Command\n");
+			} else { // run command
+				if(strcmp(history_input, "!!") == 0) {
+					execute(tokens_history[0], &should_run);
+				} else {
+					if(strcmp(tokens_history[(int)history_input[1] - '0'], "history") == 0) {
+						update_command_history(tokens_history, "history", history_count);
+                        			if(history_count < 10) {
+                        			        history_count++;
+                       				 }
+                        			// print options
+                        			for(int i = history_count-1; i>=0; i--) {// print command history
+                        			        printf("%d: %s\n", i, tokens_history[i]);
+                        			}
+					} else {
+						char *new_command = tokens_history[(int)history_input[1] - '0'];
+						update_command_history(tokens_history, new_command, history_count);
+                        			if(history_count < 10) {
+                        			        history_count++;
+                        			}
+						printf("%s\n", tokens_history[(int)history_input[1] - '0']);
+						execute(tokens_history[(int)history_input[1] - '0' + 1], &should_run);
+					}
+				}
+			}
+		} else {
+			update_command_history(tokens_history, raw_input, history_count);
+			if(history_count < 10) {
+				history_count++;
+			}
+			execute(raw_input, &should_run);
 		}
 	}
 	return 0;
@@ -95,7 +126,7 @@ char **tokenize(char *line, int *is_background){
 		char *token =  strtok(line, " \n\r");
 		while(token != NULL){
 			tokens[index] = token;
-			printf("%s\n", tokens[index]);
+			//printf("%s\n", tokens[index]);
 			index++;
 			token = strtok(NULL, " \n\r");
 		}
@@ -107,6 +138,14 @@ char **tokenize(char *line, int *is_background){
 		// & is last character of last token (even if there is a space before if making it its own token
 		if(*(tokens[index - 1] + strlen( tokens[index - 1]) - sizeof(char)) == '&') {
 			//printf("& found\n");
+			if(strlen( tokens[index - 1]) == 1){
+				printf("Removing & token");
+				//*(tokens[index - 1] + strlen( tokens[index - 1]) - sizeof(char)) = '\0';
+				tokens[index - 1] = NULL;
+			} else {
+				*(tokens[index - 1] + strlen( tokens[index - 1]) - sizeof(char)) = '\0';
+			}
+
 			*is_background = 1;
 		}
 
@@ -150,16 +189,22 @@ void execute(char *raw_in, int *should_run){
 				waitpid(background_process_pid, &status, 0);
 				printf("%s exited with: %d\n", tokens[0], WEXITSTATUS(status));
 			}
-	
+			exit(0);	
 		}
 
 	}
 
-	// run it	
 }
 
-void update_command_history(char tokens_history[][MAX_LINE], char *last_command) {
-	
+void update_command_history(char tokens_history[][MAX_LINE], char *last_command, int history_count) {
+	for(int i=history_count; i>0; i--){
+		strcpy(tokens_history[i], tokens_history[i-1]);
+	}
+	strcpy(tokens_history[0], last_command);
+	if(tokens_history[0][strlen(tokens_history[0]) - 1] == '\r'
+	|| tokens_history[0][strlen(tokens_history[0]) - 1] == '\n'){
+		tokens_history[0][strlen(tokens_history[0]) - 1] = '\0';
+	}
 }
 
 
