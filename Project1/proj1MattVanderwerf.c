@@ -89,10 +89,16 @@ char **tokenize(char *line, int *is_background, int *is_history, char command_hi
 	}
 
 	printf("->%s\n", line);
-	update_command_history(command_history, line, commands_in_history);
+	if((char)line[0] != '!') {
+		update_command_history(command_history, line, commands_in_history);
+	} 
+	// else if(strncmp(line, "!!", 2) == 0) {
+	// 	update_command_history(command_history, "history", commands_in_history);
+	// }
 	char *line_copy = line; // is this necessary?
 
 	token = strtok_r(line_copy, " \r\n\t\a", &line_copy);
+	printf("TOKEN: %s|||||%s\n", token, line);
 
 	while(token) {
 
@@ -106,17 +112,18 @@ char **tokenize(char *line, int *is_background, int *is_history, char command_hi
 						printf("No commands in the history\n");
 						return tokens;
 					} 
-					update_command_history(command_history, command_history[ *commands_in_history - 1], commands_in_history);
-					return tokenize(command_history[*commands_in_history - 1], is_background, is_history, command_history, commands_in_history, should_run);
+					update_command_history(command_history, "history", commands_in_history);
+					print_history(command_history, commands_in_history);
+					//return tokenize(command_history[0], is_background, is_history, command_history, commands_in_history, should_run);
 				
 				} else { // num command
 					*is_history = 0;
 					int command_num = atoi(token+1);
-					if(command_num >= *commands_in_history) { // out of bounds
+					if(command_num - 1 >= *commands_in_history) { // out of bounds
 						printf("Invalid command number\n");
 					} else { // valid command number
-						update_command_history(command_history, command_history[command_num], commands_in_history);
-						return tokenize(command_history[command_num], is_background, is_history, command_history, commands_in_history, should_run);
+						update_command_history(command_history, command_history[command_num + 1], commands_in_history);
+						return tokenize(command_history[command_num + 1], is_background, is_history, command_history, commands_in_history, should_run);
 					}
 					return tokens;
 				}
@@ -124,7 +131,6 @@ char **tokenize(char *line, int *is_background, int *is_history, char command_hi
 				printf("Make sure to specify which command from history\n");
 			}
 		} else if(strcmp(token, "history") == 0) { // check for history command itself
-			printf("HISTORY\n");
 			*is_history = 1;
 			print_history(command_history, commands_in_history);
 			//tokens[index] = token;
