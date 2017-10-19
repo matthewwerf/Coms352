@@ -41,9 +41,8 @@ int main(void) {
 		fflush(stdout);	
 
 		size_t input_buffer_size = 80 * sizeof(char);
-		char raw_input[input_buffer_size];
-		fgets(raw_input, input_buffer_size, stdin);
-		raw_input[input_buffer_size - 1] = '\0';
+		char *raw_input;
+		getline(&raw_input, &input_buffer_size, stdin);
 
 		//debug input
 		//printf("%s", raw_input);
@@ -61,12 +60,15 @@ int main(void) {
 			
 			tokens = tokenize(commands, &is_background, &is_history, command_history, &commands_in_history, &should_run);
 
+			/*
+			for(int z=0; z<10; z++){
+				printf("%s\n", tokens[z]);
+			}
+			*/
+
+
 			if(tokens != NULL) { // Make sure valid command was returned
-				if(is_history) { // assuming history cannot be run in background because the user needs to see history before choosing
-					print_history(command_history, &commands_in_history);
-				} else {
-					execute(tokens, &should_run, &is_background);
-				}
+				execute(tokens, &should_run, &is_background);
 			}
 
 			commands = strtok(NULL, ";");
@@ -95,46 +97,60 @@ char **tokenize(char *line, int *is_background, int *is_history, struct executio
 		return NULL;
 	}
 
-	//char *line_copy = line; // is this necessary?
+	char *line_copy = line; // is this necessary?
 
-	token = strtok_r(line, " \r\n\t\a", &line);
+	token = strtok_r(line_copy, " \r\n\t\a", &line_copy);
 
-	if(strncmp(token, "exit", 4) == 0) {// Check for exit
-		*should_run = 0;
-		return NULL;
-	} else if(token[0] == '!') {// Check for history select command
-		if(strlen(token) > 1) {
-			if(token[1] == '!') { // last command
-				*is_background = 0;
-				if(*commands_in_history < 1) { // nothing in history yet
+	while(token) {
+
+		if(strncmp(token, "exit", 4) == 0) {// Check for exit
+			*should_run = 0;
+			return NULL;
+		} else if(token[0] == '!') {// Check for history select command
+			if(strlen(token) > 1) {
+				if(token[1] == '!') { // last command
+					*is_history = 0;
+					if(*commands_in_history < 1) { // nothing in history yet
+						return tokens;
+					} 
+					update_command_history(command_history, command_history[ *commands_in_history - 1]->tokens, command_history[ *commands_in_history - 1]->num_tokens, commands_in_history);
+					return command_history[*commands_in_history - 1]->tokens;
+				
+				} else { // num command
+					*is_history = 0;
+					int command_num = atoi(token+1);
+					if(command_num >= *commands_in_history) { // out of bounds
+						printf("Invalid command number");
+						return NULL;
+					} else { // valid command number
+						update_command_history(command_history, command_history[command_num]->tokens, command_history[command_num]->num_tokens, commands_in_history);
+						return command_history[command_num]->tokens;
+					}
 					return tokens;
-				} 
-				update_command_history(command_history, command_history[ *commands_in_history - 1]->tokens, command_history[ *commands_in_history - 1]->num_tokens, commands_in_history);
-				return command_history[*commands_in_history - 1]->tokens;
-			
-			} else { // num command
-				*is_background = 0;
-				int command_num = atoi(token+1);
-				if(command_num >= *commands_in_history) { // out of bounds
-					printf("Invalid command number");
-					return NULL;
-				} else { // valid command number
-					update_command_history(command_history, command_history[command_num]->tokens, command_history[command_num]->num_tokens, commands_in_history);
-					return command_history[command_num]->tokens;
 				}
-				return tokens;
+			} else {
+				printf("Make sure to specify which command from history\n");
+				return NULL;
 			}
+		} else if(strncmp(token, "history", 7) == 0) { // check for history command itself
+			*is_history = 1;
+			print_history(command_history, commands_in_history);
+			tokens[index] = token;
+		} else if(strcmp(token, "&") == 0){
+			*is_background = 1;
 		} else {
-			printf("Make sure to specify which command from history\n");
+			tokens[index] = token;
+		}
+		if(index < MAX_LINE - 1) {// Check for overflow
+			index++;
+			token = strtok_r(line_copy, " \r\n\t\a", &line_copy);
+		} else {
+			printf("Command size exceeded\n");
 			return NULL;
 		}
-	} else if(strncmp(token, "history", 7) == 0) { // check for history command itself
-		*is_history = 1;
-		tokens[index] = "history";
-		return tokens;
 	}
-
-
+	update_command_history(command_history, tokens, index, commands_in_history);
+	tokens[index] = 0;
 	return tokens;
 }
 
@@ -163,18 +179,23 @@ void execute(char **tokens, int *should_run, int *is_background) {
 }
 
 void update_command_history(struct execution **command_history, char ** tokens, int num_commands, int *commands_in_history) {
-	command_history[*commands_in_history]->num_tokens = num_commands;
-	command_history[*commands_in_history]->tokens = tokens;
+	for(int i = *commands_in_history; i > 0; i--){
+		command_history[i]->tokens = command_history[i - 1]->tokens;
+		command_history[i]->num_tokens = command_history[i - 1]->num_tokens;
+	}
+	command_history[0]->num_tokens = num_commands;
+	command_history[0]->tokens = tokens;
 	if(*commands_in_history < 10){
 		*commands_in_history = *commands_in_history + 1;
 	}
+
 }
 
 void print_history(struct execution **command_history, int *commands_in_history) {
-	for(int i = *commands_in_history-1; i >= 0; i--) {
-		printf("%d", i);
-		for(int j=0; j < command_history[i]->num_tokens; j++){
-			printf("%s", command_history[i]->tokens[j]);
+	for(int p = *commands_in_history-1; p >= 0; p--) {
+		printf("%d", p);
+		for(int j=0; j < command_history[p]->num_tokens; j++){
+			printf("%s ", command_history[p]->tokens[j]);
 		}
 		printf("\n"); // to ensure output is flushed
 	}
