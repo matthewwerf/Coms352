@@ -19,21 +19,9 @@ int main(void) {
 
 	int commands_in_history = 0;
 	char command_history[10][MAX_LINE];
-	/*1
-	if(command_history == NULL) {
-		printf("Command History could not be allocated\n");
-		exit(-1);
-	}
-	
-	for(int i=0; i<10; i++) {
-		command_history[i] = (struct execution *)malloc(MAX_LINE * sizeof(char));
-		if(command_history[i] == NULL) {
-			printf("Command History Index could not be allocated\n");
-			exit(-1);
-		}
-	}
-	*/
 
+
+	// Main while loop
 	while (should_run) {
 		printf("osh>");
 		fflush(stdout);	
@@ -45,8 +33,8 @@ int main(void) {
 		//debug input
 		//printf("%s", raw_input);
 
-		char *commands = strtok(raw_input, ";");
-		while(commands) { // != NULL?
+		char *commands = strtok(raw_input, ";"); // split for multiple command inputs
+		while(commands) {
 			int is_background = 0;
 			int is_history = 0;
 
@@ -67,17 +55,10 @@ int main(void) {
 		}
 	}
 
-	/*
-	for(int l = 0; l < 10; l++) {
-		free(command_history[l]);
-	}
-	free(command_history);
-	*/
-
 	return 0;
 }
 
-
+// Function to tokenize user input
 char **tokenize(char *line, int *is_background, int *is_history, char command_history[10][MAX_LINE], int *commands_in_history, int *should_run) {
 	char *token;
 	char **tokens = (char **)malloc(MAX_LINE * sizeof(char*));
@@ -88,17 +69,12 @@ char **tokenize(char *line, int *is_background, int *is_history, char command_hi
 		return NULL;
 	}
 
-	printf("->%s\n", line);
-	if((char)line[0] != '!') {
+	if((char)line[0] != '!') {// Update command history if the input isn't a bang command
 		update_command_history(command_history, line, commands_in_history);
-	} 
-	// else if(strncmp(line, "!!", 2) == 0) {
-	// 	update_command_history(command_history, "history", commands_in_history);
-	// }
+	}
 	char *line_copy = line; // is this necessary?
 
 	token = strtok_r(line_copy, " \r\n\t\a", &line_copy);
-	printf("TOKEN: %s|||||%s\n", token, line);
 
 	while(token) {
 
@@ -112,7 +88,7 @@ char **tokenize(char *line, int *is_background, int *is_history, char command_hi
 						printf("No commands in the history\n");
 						return tokens;
 					} 
-					update_command_history(command_history, "history", commands_in_history);
+					update_command_history(command_history, "history", commands_in_history); // !! is history command after history has been checked
 					print_history(command_history, commands_in_history);
 					//return tokenize(command_history[0], is_background, is_history, command_history, commands_in_history, should_run);
 				
@@ -146,12 +122,12 @@ char **tokenize(char *line, int *is_background, int *is_history, char command_hi
 			printf("Command size exceeded\n");
 		}
 	}
-	//printf("->%s\n", line);
-	//update_command_history(command_history, line_copy, commands_in_history);
 	tokens[index] = 0;
 	return tokens;
 }
 
+
+// Executes tokenized input in foreground or background
 void execute(char **tokens, int *should_run, int *is_background) {
 	int child_pid = fork();
 	
@@ -176,6 +152,7 @@ void execute(char **tokens, int *should_run, int *is_background) {
 	}
 }
 
+// Shift history through array, only keep most recent 10
 void update_command_history(char command_history[10][MAX_LINE], char raw_input[MAX_LINE], int *commands_in_history) {
 	for(int i = 9; i > 0; i--){
 	 	strcpy(command_history[i], command_history[i-1]);
@@ -186,6 +163,7 @@ void update_command_history(char command_history[10][MAX_LINE], char raw_input[M
 	}
 }
 
+// Loop through history and print
 void print_history(char command_history[10][MAX_LINE], int *commands_in_history) {
 	for(int p = *commands_in_history-1; p >= 0; p--) {
 		printf("%d: %s\n", p+1, command_history[p]);
