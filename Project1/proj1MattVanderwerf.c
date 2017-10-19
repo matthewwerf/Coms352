@@ -167,13 +167,7 @@ void execute(char **tokens, int *should_run, int *is_background) {
 }
 
 void update_command_history(struct execution **command_history, char ** tokens, int num_commands, int *commands_in_history) {
-	// for(int i = *commands_in_history; i > 0; i--){
-	// 	command_history[i]->tokens = command_history[i - 1]->tokens;
-	// 	command_history[i]->num_tokens = command_history[i - 1]->num_tokens;
-	// }
-
-
-	for(int i = 10; i > 0; i--){
+	for(int i = *commands_in_history; i > 0; i--){
 	 	command_history[i]->tokens = command_history[i - 1]->tokens;
 	 	command_history[i]->num_tokens = command_history[i - 1]->num_tokens;
 	}
