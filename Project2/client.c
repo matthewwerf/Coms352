@@ -41,13 +41,22 @@ int main(int arg, char *argv[]) {
 	printf("Please provide message less than 1023 characters\n");
 	fgets(message, sizeof(message), stdin);
 
-	char messageDigest[SHA_DIGEST_LENGTH];
-	SHA1(message, sizeof(message), messageDigest);
+	unsigned char tmp[SHA_DIGEST_LENGTH];
+	char messageDigest[SHA_DIGEST_LENGTH * 2];
 
-	char digitalSignature[SHA_DIGEST_LENGTH];
+	memset(tmp, 0x0, SHA_DIGEST_LENGTH);
+	memset(messageDigest, 0x0, SHA_DIGEST_LENGTH * 2);
+
+	SHA1((unsigned char *)message, strlen(message), tmp);
+
+	for (int i=0; i < SHA_DIGEST_LENGTH; i++) {
+		sprintf((char*)&(messageDigest[i*2]), "%02x", temp[i]);
+	}
+
+	//char digitalSignature[SHA_DIGEST_LENGTH];
 	
 
-	printf("%s\n", hash);
+	printf("%s\n", messageDigest);
 
 	send(sock, message, strlen(message), 1024);
 	printf("Message send\n");
