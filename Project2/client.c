@@ -5,8 +5,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <openssl/sha.h>
 
-#define PORT 8080
+
+#define PORT 9999
 
 int main(int arg, char *argv[]) {
 	struct sockaddr_in address;
@@ -38,6 +40,14 @@ int main(int arg, char *argv[]) {
 
 	printf("Please provide message less than 1023 characters\n");
 	fgets(message, sizeof(message), stdin);
+
+	char messageDigest[SHA_DIGEST_LENGTH];
+	SHA1(message, sizeof(message), messageDigest);
+
+	char digitalSignature[SHA_DIGEST_LENGTH];
+	
+
+	printf("%s\n", hash);
 
 	send(sock, message, strlen(message), 1024);
 	printf("Message send\n");

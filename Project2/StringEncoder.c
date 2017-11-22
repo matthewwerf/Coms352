@@ -116,7 +116,7 @@ void stringToReverseAscii(char *s){
 
 
 //stringToEncodedAscii prints the encoded representaion of the ASCII representaion of a given string(Encoding is based on encoding array at the top of this file)
-void stringToEncodedAscii(char *s){
+char[] stringToEncodedAscii(char *s){
   char *ptr = s;
   char finalRes[256]="";
   
@@ -187,8 +187,8 @@ void stringToEncodedAscii(char *s){
     strcat(finalResEncoded,paddedStr);
   }
   
-  printf("\nstringToEncodedAscii :: %s",finalResEncoded);
-  
+  //printf("\nstringToEncodedAscii :: %s",finalResEncoded);
+  return finalResEncoded;
 }
 
 int main() {
@@ -199,6 +199,6 @@ int main() {
   
   stringToAscii(s);
   stringToReverseAscii(s);
-  stringToEncodedAscii(s);
+  printf("%s\n", stringToEncodedAscii(s));
   return 0;
 }
