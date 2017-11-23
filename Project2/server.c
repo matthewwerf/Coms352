@@ -59,13 +59,6 @@ int main(int argc, char *argv[]){
 		perror("Thread to handle client could not be created");
 		exit(EXIT_FAILURE);
 	}
-	/*
-    	valread = read( new_socket , buffer, 1024);
-    	printf("%s\n",buffer );
-    	send(new_socket , hello , strlen(hello) , 0 );
-    	printf("Hello message sent\n");
-    	return 0;
-    	*/
     }
     return 0;
 }
@@ -76,13 +69,13 @@ void *threadHandler(void *connectedSocket) {
 	memset(clientPayload, 0x0, 4096);
 
 	read(socket, clientPayload, 4096);
-	//read(socket, clientDigitalSignature, 4096);
 
 	printf("%s\n", clientPayload);
 
 	printf("Handling %d socket\n", socket);
 
-	char* splitPayload = strtok(clientPayload, "/n");
+	char* splitPayload;
+	splitPayload = strtok(clientPayload, "\n");
 	unsigned char tmp[SHA_DIGEST_LENGTH];
 	char messageDigest[SHA_DIGEST_LENGTH * 2];
 
@@ -92,7 +85,6 @@ void *threadHandler(void *connectedSocket) {
 	memset(messageDigest, 0x0, SHA_DIGEST_LENGTH * 2);
 
 	SHA1((unsigned char *)splitPayload, strlen(splitPayload), tmp);
-	//SHA1((unsigned char*)clientMessage, strlen(clientMessage), tmp);
 
 	for(int i=0; i < SHA_DIGEST_LENGTH; i++) {
 		sprintf((char*)&(messageDigest[i*2]), "%02x", tmp[i]);
@@ -100,20 +92,17 @@ void *threadHandler(void *connectedSocket) {
 
 	printf("Message Digest: %s\n", messageDigest);
 
-	char* digitalSignature;
-	digitalSignature[0] = '\0';
+	char* digitalSignature = (char *)malloc(4096);
+	//digitalSignature[0] = '\0';
+	memset(digitalSignature, 0x0, 4096);
 	digitalSignature = stringToEncodedAscii(messageDigest);
 
 	printf("SERVER CALCULATED DIGITAL SIGNATURE:\n%s\n", digitalSignature);
 
-	//char* clientDigitalSignature;	
-	//clientDigitalSignature = strtok(NULL, "\0");
 	splitPayload = strtok(NULL, "\0");
 
-	printf("%s\n", splitPayload);
-	printf("strtok is not the problem\n");
-
 	if(strncmp(splitPayload, digitalSignature, strlen(digitalSignature)) == 0){
+	//if(strcmp(splitPayload, digitalSignature) == 0) {
 		send(socket, "TRUE", 4, 0);
 	} else {
 		send(socket, "FALSE", 5, 0);

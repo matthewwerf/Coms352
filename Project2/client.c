@@ -35,13 +35,11 @@ int main(int arg, char *argv[]) {
 		return -1;
 	}
 
-	//char message[1024];
-	char* message = (char *)malloc(1024);
-	ssize_t messageSize = 1024;
+	char message[1024];
 	char response[1024];
 
 	printf("Please provide message less than 1023 characters\n");
-	getline(&message, &messageSize, stdin);
+	fgets(message, 1024, stdin);
 
 	unsigned char tmp[SHA_DIGEST_LENGTH];
 	char messageDigest[SHA_DIGEST_LENGTH * 2];
@@ -49,7 +47,7 @@ int main(int arg, char *argv[]) {
 	memset(tmp, 0x0, SHA_DIGEST_LENGTH);
 	memset(messageDigest, 0x0, SHA_DIGEST_LENGTH * 2);
 
-	SHA1((unsigned char *)message, strlen(message), tmp);
+	SHA1((unsigned char *)message, strlen(message) - 1, tmp);
 
 	for (int i=0; i < SHA_DIGEST_LENGTH; i++) {
 		sprintf((char*)&(messageDigest[i*2]), "%02x", tmp[i]);
@@ -67,8 +65,6 @@ int main(int arg, char *argv[]) {
 	fullPayload[strlen(fullPayload)] = '\0';
 	send(sock, fullPayload, strlen(fullPayload), 0);
 	printf("FULL PAYLOAD: %s\n", fullPayload);
-	//send(sock, message, strlen(message), 0);
-	//send(sock, digitalSignature, strlen(digitalSignature), 0);
 	free(digitalSignature);
 	free(fullPayload);
 
