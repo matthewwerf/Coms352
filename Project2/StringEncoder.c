@@ -188,17 +188,18 @@ char* stringToEncodedAscii(char *s){
   }
   //printf("\n%d\n", strlen(finalResEncoded));
 
+  // Allocate space in heap and copy the encoded string there
+  // so that it may be returned to the calling function
+  // through a pointer
   char* heapCopy = (char *)malloc(strlen(finalResEncoded) + 1);
-  //char* heapCopy = (char *)malloc(256 + 1);
   strncpy(heapCopy, finalResEncoded, strlen(finalResEncoded));
   heapCopy[strlen(finalResEncoded)] = '\0';
 
   //printf("\nstringToEncodedAscii :: %s\n",finalResEncoded);
   return heapCopy;
-
-  //printf("%d\n", strlen(finalResEncoded));
-  //return finalResEncoded;
 }
+
+// Comment out the main because the compiler got mad
 /*
 int main() {
   
