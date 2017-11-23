@@ -189,6 +189,7 @@ char* stringToEncodedAscii(char *s){
   //printf("\n%d\n", strlen(finalResEncoded));
 
   char* heapCopy = (char *)malloc(strlen(finalResEncoded) + 1);
+  //char* heapCopy = (char *)malloc(256 + 1);
   strncpy(heapCopy, finalResEncoded, strlen(finalResEncoded));
   heapCopy[strlen(finalResEncoded)] = '\0';
 
@@ -198,7 +199,7 @@ char* stringToEncodedAscii(char *s){
   //printf("%d\n", strlen(finalResEncoded));
   //return finalResEncoded;
 }
-
+/*
 int main() {
   
   char s[256];
@@ -211,3 +212,4 @@ int main() {
   printf("stringToEncodedAscii :: %s\n", stringToEncodedAscii(s));
   return 0;
 }
+*/

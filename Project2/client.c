@@ -6,9 +6,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <openssl/sha.h>
+#include "StringEncoder.c"
 
-
-#define PORT 9999
+#define PORT 8010
 
 int main(int arg, char *argv[]) {
 	struct sockaddr_in address;
@@ -35,11 +35,13 @@ int main(int arg, char *argv[]) {
 		return -1;
 	}
 
-	char message[1024];
+	//char message[1024];
+	char* message = (char *)malloc(1024);
+	ssize_t messageSize = 1024;
 	char response[1024];
 
 	printf("Please provide message less than 1023 characters\n");
-	fgets(message, sizeof(message), stdin);
+	getline(&message, &messageSize, stdin);
 
 	unsigned char tmp[SHA_DIGEST_LENGTH];
 	char messageDigest[SHA_DIGEST_LENGTH * 2];
@@ -50,17 +52,29 @@ int main(int arg, char *argv[]) {
 	SHA1((unsigned char *)message, strlen(message), tmp);
 
 	for (int i=0; i < SHA_DIGEST_LENGTH; i++) {
-		sprintf((char*)&(messageDigest[i*2]), "%02x", temp[i]);
+		sprintf((char*)&(messageDigest[i*2]), "%02x", tmp[i]);
 	}
 
-	//char digitalSignature[SHA_DIGEST_LENGTH];
-	
+	printf("Message Digest: %s\n", messageDigest);
 
-	printf("%s\n", messageDigest);
+	char* digitalSignature = stringToEncodedAscii(messageDigest);
+	char* fullPayload = (char *)malloc(strlen(message) + strlen(digitalSignature) + 1);
+	memset(fullPayload, 0x0, strlen(message) + strlen(digitalSignature) + 1);
+	fullPayload[0] = '\0';
+	strcat(fullPayload, message);
+	strcat(fullPayload, digitalSignature);
+	printf("payload size: %d\n", strlen(fullPayload));
+	fullPayload[strlen(fullPayload)] = '\0';
+	send(sock, fullPayload, strlen(fullPayload), 0);
+	printf("FULL PAYLOAD: %s\n", fullPayload);
+	//send(sock, message, strlen(message), 0);
+	//send(sock, digitalSignature, strlen(digitalSignature), 0);
+	free(digitalSignature);
+	free(fullPayload);
 
-	send(sock, message, strlen(message), 1024);
 	printf("Message send\n");
-	valread = read(sock, response, 1024);
+	valread = read(sock, response, 4096);
 	printf("%s\n", response);
+	close(sock);
 	return 0;
 }
