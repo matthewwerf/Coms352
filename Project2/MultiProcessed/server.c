@@ -11,7 +11,8 @@
 #define PORT 8010
 #define TRUE 1
 
-void *threadHandler(void *connectedSocket);
+//void *threadHandler(void *connectedSocket);
+void processHandler(int* connectedSocket);
 
 int main(int argc, char *argv[]){
 	// Socket Implentation Following Online Tutorials
@@ -56,6 +57,8 @@ int main(int argc, char *argv[]){
         	exit(EXIT_FAILURE);
     	}
 
+    	// Multithreaded approach
+    	/*
 	    // Initialize Handler Thread
 		pthread_t clientHandlerThread;
 
@@ -64,10 +67,64 @@ int main(int argc, char *argv[]){
 			perror("Thread to handle client could not be created");
 			exit(EXIT_FAILURE);
 		}
+		*/
+
+		if(fork() == 0) {
+			processHandler(&new_socket);
+		}
     }
     return 0;
 }
 
+void processHandler(int* connectedSocket) {
+	int socket = connectedSocket;
+	char clientPayload[4096];
+	memset(clientPayload, 0x0, 4096);
+
+	// Read data from socket
+	read(socket, clientPayload, 4096);
+
+	printf("Responding to Socket: %d\n", socket);
+
+	// Grab Message from Payload
+	char* splitPayload;
+	splitPayload = strtok(clientPayload, "\n");
+	unsigned char tmp[SHA_DIGEST_LENGTH];
+	char messageDigest[SHA_DIGEST_LENGTH * 2];
+
+	memset(tmp, 0x0, SHA_DIGEST_LENGTH);
+	memset(messageDigest, 0x0, SHA_DIGEST_LENGTH * 2);
+
+	// Hash Message based on code from SHA1 tutorial online into message digest
+	SHA1((unsigned char *)splitPayload, strlen(splitPayload), tmp);
+
+	for(int i=0; i < SHA_DIGEST_LENGTH; i++) {
+		sprintf((char*)&(messageDigest[i*2]), "%02x", tmp[i]);
+	}
+
+	// Generate digital signature using StringEncoder
+	char* digitalSignature = (char *)malloc(4096);
+	memset(digitalSignature, 0x0, 4096);
+	digitalSignature = stringToEncodedAscii(messageDigest);
+
+	// Grab Digital Signature from the rest of the payload
+	splitPayload = strtok(NULL, "\0");
+
+	// Compare and respond accordingly
+	if(strncmp(splitPayload, digitalSignature, strlen(digitalSignature)) == 0){
+		send(socket, "TRUE", 4, 0);
+	} else {
+		send(socket, "FALSE", 5, 0);
+	}
+
+	// Free heap variables
+	free(digitalSignature);
+
+	// Close Socket
+	close(socket);
+}
+
+/*
 // Thread Handler Function
 void *threadHandler(void *connectedSocket) {
 	// Pass Socket Descriptor into Function
@@ -120,3 +177,4 @@ void *threadHandler(void *connectedSocket) {
 	// Exit Thread
 	pthread_exit(0);
 }
+*/
