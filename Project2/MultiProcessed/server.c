@@ -77,7 +77,7 @@ int main(int argc, char *argv[]){
 }
 
 void processHandler(int* connectedSocket) {
-	int socket = connectedSocket;
+	int socket = *connectedSocket;
 	char clientPayload[4096];
 	memset(clientPayload, 0x0, 4096);
 
